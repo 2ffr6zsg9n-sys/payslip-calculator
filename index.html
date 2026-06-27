@@ -603,8 +603,12 @@
         <a class="breakdown-link" id="breakdown-link" href="breakdown.html" target="_blank" rel="noopener">View calculation breakdown</a>
       </aside>
       <div class="step-actions">
+        <div>
+          <label for="basic-pay-override">Change Basic Pay amount</label>
+          <input id="basic-pay-override" inputmode="decimal" placeholder="Blank keeps calculated Basic Pay">
+        </div>
         <button id="recalculate-payslip" type="button">Recalculate payslip</button>
-        <p class="field-hint">After changing allowances, deductions or overrides, click Recalculate payslip to refresh the estimate.</p>
+        <p class="field-hint">After changing Basic Pay, allowances, deductions or overrides, click Recalculate payslip to refresh the estimate.</p>
       </div>
       <form class="line-panel">
         <p class="field-hint">You can add allowances and deductions to this estimate. Common items are in the drop-down lists, or you can add your own user-defined allowances and deductions below.</p>
@@ -966,12 +970,17 @@
         : monthlySalary;
     }
 
+    function monthlyBasePayForCalculation() {
+      const override = document.getElementById("basic-pay-override").value.trim();
+      return override === "" ? monthlyBasePayFromInputs() : numberValue(override);
+    }
+
     function updatePensionFields(resetOverride) {
       if (resetOverride) state.pensionBandOverridden = false;
       const inPension = document.getElementById("in-pension").checked;
       if (!inPension || state.pensionBandOverridden) return;
       const data = referenceData();
-      const likelyBand = pensionBandFor(monthlyBasePayFromInputs() * 12, data.pensionBands);
+      const likelyBand = pensionBandFor(monthlyBasePayForCalculation() * 12, data.pensionBands);
       if (likelyBand) document.getElementById("pension-band").value = likelyBand.id;
     }
 
@@ -1064,7 +1073,7 @@
     function calculate() {
       const data = referenceData();
       updatePensionFields(false);
-      const monthlyBasePay = monthlyBasePayFromInputs();
+      const monthlyBasePay = monthlyBasePayForCalculation();
       const monthNumber = Math.min(12, Math.max(1, Number(document.getElementById("month").value) || 1));
       const newStarter = document.getElementById("new-starter").value === "yes";
       const isCumulative = document.getElementById("cumulative-tax").checked && monthNumber > 1;
