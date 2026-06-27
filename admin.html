@@ -1,0 +1,490 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>NHS Paylip Calculator Admin</title>
+  <style>
+    :root {
+      font-family: Arial, Helvetica, sans-serif;
+      color: #0b0c0c;
+      background: #f3f2f1;
+      --nhs-blue: #005eb8;
+      --nhs-dark-blue: #003f7e;
+      --nhs-light-blue: #e8f1fb;
+      --border: #b1b4b6;
+      --muted: #505a5f;
+      --red: #d4351c;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-width: 320px; }
+    body::before { content: ""; display: block; height: 10px; background: var(--nhs-blue); }
+    main { width: min(1600px, calc(100% - 40px)); margin: 0 auto; padding: 28px 0 56px; }
+    button, input, select, textarea { font: inherit; }
+    button {
+      border: 0;
+      background: var(--nhs-blue);
+      color: #fff;
+      font-weight: 700;
+      cursor: pointer;
+      padding: 10px 14px;
+      box-shadow: 0 3px 0 var(--nhs-dark-blue);
+    }
+    button:hover { background: var(--nhs-dark-blue); }
+    input, select, textarea {
+      width: 100%;
+      min-height: 42px;
+      border: 2px solid #0b0c0c;
+      border-radius: 0;
+      background: #fff;
+      padding: 8px 10px;
+    }
+    textarea { min-height: 160px; resize: vertical; }
+    input:focus, select:focus, textarea:focus, button:focus {
+      outline: 3px solid #ffdd00;
+      outline-offset: 0;
+      box-shadow: inset 0 0 0 2px #0b0c0c;
+    }
+    h1, h2, p { margin-top: 0; }
+    h1 { font-size: 40px; line-height: 1.08; margin-bottom: 12px; }
+    h2 { font-size: 25px; line-height: 1.15; margin-bottom: 10px; }
+    label { display: block; margin-bottom: 7px; font-weight: 700; }
+    .app-header { display: flex; align-items: center; gap: 16px; margin-bottom: 26px; }
+    .nhs-mark {
+      display: inline-block;
+      padding: 5px 10px 3px;
+      background: var(--nhs-blue);
+      color: #fff;
+      font-size: 29px;
+      font-weight: 700;
+      letter-spacing: -1px;
+      line-height: 1;
+    }
+    .title-block { display: grid; gap: 2px; margin-right: auto; }
+    .title-block strong { color: var(--nhs-dark-blue); font-size: 25px; line-height: 1.05; }
+    .title-block span { color: var(--muted); font-size: 14px; }
+    .top-link {
+      border: 2px solid var(--nhs-blue);
+      background: #fff;
+      color: var(--nhs-blue);
+      font-weight: 700;
+      padding: 10px 14px;
+      text-decoration: none;
+    }
+    .card {
+      background: #fff;
+      border: 1px solid #d8dde0;
+      box-shadow: 0 2px 0 rgba(11, 12, 12, .08);
+      padding: 28px;
+      margin-bottom: 22px;
+    }
+    .card p { color: var(--muted); font-size: 18px; line-height: 1.45; }
+    .tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px; }
+    .tabs button {
+      border: 2px solid var(--nhs-blue);
+      background: #fff;
+      color: var(--nhs-blue);
+      box-shadow: none;
+    }
+    .tabs button.active { background: var(--nhs-blue); color: #fff; }
+    .section-heading { display: flex; justify-content: space-between; gap: 18px; align-items: center; margin-bottom: 14px; }
+    .section-heading h2 { margin: 0; }
+    .table-wrap { overflow-x: auto; border: 1px solid var(--border); }
+    table { width: 100%; min-width: 980px; border-collapse: collapse; background: #fff; }
+    th, td { border-bottom: 1px solid #d8dde0; padding: 10px; text-align: left; vertical-align: top; }
+    th { background: #f3f2f1; font-size: 14px; position: sticky; top: 0; }
+    td input, td select { min-width: 110px; }
+    td input[type="checkbox"] { width: 26px; min-height: 26px; }
+    .not-applicable {
+      display: inline-block;
+      color: var(--muted);
+      padding-top: 10px;
+      font-weight: 700;
+    }
+    .text-button {
+      background: transparent;
+      color: var(--red);
+      box-shadow: none;
+      text-decoration: underline;
+      padding-left: 4px;
+      padding-right: 4px;
+    }
+    .button-row { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 14px; }
+    .message {
+      margin-top: 16px;
+      border-left: 6px solid var(--nhs-blue);
+      background: var(--nhs-light-blue);
+      padding: 14px 16px;
+      font-weight: 700;
+    }
+    @media (max-width: 680px) {
+      main { width: min(100% - 24px, 1600px); }
+      .app-header { align-items: flex-start; flex-wrap: wrap; }
+      .card { padding: 20px 14px; }
+      h1 { font-size: 34px; }
+    }
+  </style>
+</head>
+<body>
+  <script id="reference-data" type="application/json">
+{
+  "payElements": [
+    { "id": "basic-pay", "name": "Basic pay", "type": "Allowance", "defaultAmount": 0, "taxable": true, "niable": true, "pensionable": true },
+    { "id": "unsocial-hours", "name": "Unsocial hours", "type": "Allowance", "defaultAmount": 0, "taxable": true, "niable": true, "pensionable": true },
+    { "id": "arrears", "name": "Arrears", "type": "Allowance", "defaultAmount": 0, "taxable": true, "niable": true, "pensionable": true },
+    { "id": "salary-sacrifice-car", "name": "Salary sacrifice car", "type": "Deduction", "defaultAmount": 0, "taxable": true, "niable": true, "pensionable": true },
+    { "id": "parking", "name": "Car parking", "type": "Deduction", "defaultAmount": 0, "taxable": false, "niable": false, "pensionable": false }
+  ],
+  "afcRates": [
+    { "id": "b1-entry", "band": "1", "payStep": "Entry", "annualSalary": 25272, "sortOrder": 10 },
+    { "id": "b2-entry", "band": "2", "payStep": "Entry", "annualSalary": 25272, "sortOrder": 20 },
+    { "id": "b2-top", "band": "2", "payStep": "Top", "annualSalary": 25272, "sortOrder": 21 },
+    { "id": "b3-entry", "band": "3", "payStep": "Entry", "annualSalary": 25760, "sortOrder": 30 },
+    { "id": "b3-top", "band": "3", "payStep": "Top", "annualSalary": 27476, "sortOrder": 31 },
+    { "id": "b4-entry", "band": "4", "payStep": "Entry", "annualSalary": 28392, "sortOrder": 40 },
+    { "id": "b4-top", "band": "4", "payStep": "Top", "annualSalary": 31157, "sortOrder": 41 },
+    { "id": "b5-entry", "band": "5", "payStep": "Entry", "annualSalary": 32073, "sortOrder": 50 },
+    { "id": "b5-mid", "band": "5", "payStep": "Intermediate", "annualSalary": 34592, "sortOrder": 51 },
+    { "id": "b5-top", "band": "5", "payStep": "Top", "annualSalary": 39043, "sortOrder": 52 },
+    { "id": "b6-entry", "band": "6", "payStep": "Entry", "annualSalary": 39959, "sortOrder": 60 },
+    { "id": "b6-mid", "band": "6", "payStep": "Intermediate", "annualSalary": 42170, "sortOrder": 61 },
+    { "id": "b6-top", "band": "6", "payStep": "Top", "annualSalary": 48117, "sortOrder": 62 },
+    { "id": "b7-entry", "band": "7", "payStep": "Entry", "annualSalary": 49387, "sortOrder": 70 },
+    { "id": "b7-mid", "band": "7", "payStep": "Intermediate", "annualSalary": 51932, "sortOrder": 71 },
+    { "id": "b7-top", "band": "7", "payStep": "Top", "annualSalary": 56515, "sortOrder": 72 },
+    { "id": "b8a-entry", "band": "8a", "payStep": "Entry", "annualSalary": 57528, "sortOrder": 80 },
+    { "id": "b8a-mid", "band": "8a", "payStep": "Intermediate", "annualSalary": 60417, "sortOrder": 81 },
+    { "id": "b8a-top", "band": "8a", "payStep": "Top", "annualSalary": 64750, "sortOrder": 82 },
+    { "id": "b8b-entry", "band": "8b", "payStep": "Entry", "annualSalary": 66582, "sortOrder": 90 },
+    { "id": "b8b-mid", "band": "8b", "payStep": "Intermediate", "annualSalary": 70896, "sortOrder": 91 },
+    { "id": "b8b-top", "band": "8b", "payStep": "Top", "annualSalary": 77368, "sortOrder": 92 },
+    { "id": "b8c-entry", "band": "8c", "payStep": "Entry", "annualSalary": 79504, "sortOrder": 100 },
+    { "id": "b8c-mid", "band": "8c", "payStep": "Intermediate", "annualSalary": 84346, "sortOrder": 101 },
+    { "id": "b8c-top", "band": "8c", "payStep": "Top", "annualSalary": 91609, "sortOrder": 102 },
+    { "id": "b8d-entry", "band": "8d", "payStep": "Entry", "annualSalary": 94356, "sortOrder": 110 },
+    { "id": "b8d-mid", "band": "8d", "payStep": "Intermediate", "annualSalary": 100140, "sortOrder": 111 },
+    { "id": "b8d-top", "band": "8d", "payStep": "Top", "annualSalary": 108814, "sortOrder": 112 },
+    { "id": "b9-entry", "band": "9", "payStep": "Entry", "annualSalary": 112782, "sortOrder": 120 },
+    { "id": "b9-mid", "band": "9", "payStep": "Intermediate", "annualSalary": 119583, "sortOrder": 121 },
+    { "id": "b9-top", "band": "9", "payStep": "Top", "annualSalary": 129783, "sortOrder": 122 }
+  ],
+  "pensionBands": [
+    { "id": "t1", "from": 0, "to": 13259, "rate": 5.2 },
+    { "id": "t2", "from": 13260, "to": 26531, "rate": 6.5 },
+    { "id": "t3", "from": 26532, "to": 32129, "rate": 8.3 },
+    { "id": "t4", "from": 32130, "to": 43307, "rate": 9.8 },
+    { "id": "t5", "from": 43308, "to": 51292, "rate": 10 },
+    { "id": "t6", "from": 51293, "to": 67518, "rate": 11.6 },
+    { "id": "t7", "from": 67519, "to": null, "rate": 12.5 }
+  ],
+  "taxBands": [
+    { "id": "basic", "name": "Basic rate", "from": 0, "to": 37700, "rate": 20 },
+    { "id": "higher", "name": "Higher rate", "from": 37700, "to": 125140, "rate": 40 },
+    { "id": "additional", "name": "Additional rate", "from": 125140, "to": null, "rate": 45 }
+  ],
+  "niLetters": [
+    { "id": "A", "letter": "A", "description": "Standard", "monthlyLowerEarningsLimit": 559, "monthlyPrimaryThreshold": 1048, "monthlyUpperEarningsLimit": 4189, "rateToPrimaryThreshold": 0, "rateToUpperEarningsLimit": 8, "rateAboveUpperEarningsLimit": 2, "sortOrder": 10 },
+    { "id": "B", "letter": "B", "description": "Married women and widows reduced rate", "monthlyLowerEarningsLimit": 559, "monthlyPrimaryThreshold": 1048, "monthlyUpperEarningsLimit": 4189, "rateToPrimaryThreshold": 0, "rateToUpperEarningsLimit": 1.85, "rateAboveUpperEarningsLimit": 2, "sortOrder": 20 },
+    { "id": "C", "letter": "C", "description": "State pension age", "monthlyLowerEarningsLimit": 559, "monthlyPrimaryThreshold": 1048, "monthlyUpperEarningsLimit": 4189, "rateToPrimaryThreshold": 0, "rateToUpperEarningsLimit": 0, "rateAboveUpperEarningsLimit": 0, "sortOrder": 30 },
+    { "id": "D", "letter": "D", "description": "Investment Zone deferment", "monthlyLowerEarningsLimit": 559, "monthlyPrimaryThreshold": 1048, "monthlyUpperEarningsLimit": 4189, "rateToPrimaryThreshold": 0, "rateToUpperEarningsLimit": 2, "rateAboveUpperEarningsLimit": 2, "sortOrder": 40 },
+    { "id": "E", "letter": "E", "description": "Investment Zone reduced rate", "monthlyLowerEarningsLimit": 559, "monthlyPrimaryThreshold": 1048, "monthlyUpperEarningsLimit": 4189, "rateToPrimaryThreshold": 0, "rateToUpperEarningsLimit": 1.85, "rateAboveUpperEarningsLimit": 2, "sortOrder": 50 },
+    { "id": "F", "letter": "F", "description": "Freeport", "monthlyLowerEarningsLimit": 559, "monthlyPrimaryThreshold": 1048, "monthlyUpperEarningsLimit": 4189, "rateToPrimaryThreshold": 0, "rateToUpperEarningsLimit": 8, "rateAboveUpperEarningsLimit": 2, "sortOrder": 60 },
+    { "id": "H", "letter": "H", "description": "Apprentice under 25", "monthlyLowerEarningsLimit": 559, "monthlyPrimaryThreshold": 1048, "monthlyUpperEarningsLimit": 4189, "rateToPrimaryThreshold": 0, "rateToUpperEarningsLimit": 8, "rateAboveUpperEarningsLimit": 2, "sortOrder": 70 },
+    { "id": "I", "letter": "I", "description": "Freeport reduced rate", "monthlyLowerEarningsLimit": 559, "monthlyPrimaryThreshold": 1048, "monthlyUpperEarningsLimit": 4189, "rateToPrimaryThreshold": 0, "rateToUpperEarningsLimit": 1.85, "rateAboveUpperEarningsLimit": 2, "sortOrder": 80 },
+    { "id": "J", "letter": "J", "description": "Deferment", "monthlyLowerEarningsLimit": 559, "monthlyPrimaryThreshold": 1048, "monthlyUpperEarningsLimit": 4189, "rateToPrimaryThreshold": 0, "rateToUpperEarningsLimit": 2, "rateAboveUpperEarningsLimit": 2, "sortOrder": 90 },
+    { "id": "K", "letter": "K", "description": "Investment Zone state pensioner", "monthlyLowerEarningsLimit": 559, "monthlyPrimaryThreshold": 1048, "monthlyUpperEarningsLimit": 4189, "rateToPrimaryThreshold": 0, "rateToUpperEarningsLimit": 0, "rateAboveUpperEarningsLimit": 0, "sortOrder": 100 },
+    { "id": "L", "letter": "L", "description": "Freeport deferment", "monthlyLowerEarningsLimit": 559, "monthlyPrimaryThreshold": 1048, "monthlyUpperEarningsLimit": 4189, "rateToPrimaryThreshold": 0, "rateToUpperEarningsLimit": 2, "rateAboveUpperEarningsLimit": 2, "sortOrder": 110 },
+    { "id": "M", "letter": "M", "description": "Under 21", "monthlyLowerEarningsLimit": 559, "monthlyPrimaryThreshold": 1048, "monthlyUpperEarningsLimit": 4189, "rateToPrimaryThreshold": 0, "rateToUpperEarningsLimit": 8, "rateAboveUpperEarningsLimit": 2, "sortOrder": 120 },
+    { "id": "N", "letter": "N", "description": "Investment Zone", "monthlyLowerEarningsLimit": 559, "monthlyPrimaryThreshold": 1048, "monthlyUpperEarningsLimit": 4189, "rateToPrimaryThreshold": 0, "rateToUpperEarningsLimit": 8, "rateAboveUpperEarningsLimit": 2, "sortOrder": 130 },
+    { "id": "S", "letter": "S", "description": "Freeport state pensioner", "monthlyLowerEarningsLimit": 559, "monthlyPrimaryThreshold": 1048, "monthlyUpperEarningsLimit": 4189, "rateToPrimaryThreshold": 0, "rateToUpperEarningsLimit": 0, "rateAboveUpperEarningsLimit": 0, "sortOrder": 140 },
+    { "id": "V", "letter": "V", "description": "Veteran", "monthlyLowerEarningsLimit": 559, "monthlyPrimaryThreshold": 1048, "monthlyUpperEarningsLimit": 4189, "rateToPrimaryThreshold": 0, "rateToUpperEarningsLimit": 8, "rateAboveUpperEarningsLimit": 2, "sortOrder": 150 },
+    { "id": "Z", "letter": "Z", "description": "Under 21 deferment", "monthlyLowerEarningsLimit": 559, "monthlyPrimaryThreshold": 1048, "monthlyUpperEarningsLimit": 4189, "rateToPrimaryThreshold": 0, "rateToUpperEarningsLimit": 2, "rateAboveUpperEarningsLimit": 2, "sortOrder": 160 }
+  ],
+  "loanPlans": [
+    { "id": "sl-plan-1", "loanType": "Student", "planName": "Plan 1", "monthlyThreshold": 2249.58, "deductionRate": 9, "sortOrder": 10 },
+    { "id": "sl-plan-2", "loanType": "Student", "planName": "Plan 2", "monthlyThreshold": 2372.91, "deductionRate": 9, "sortOrder": 20 },
+    { "id": "sl-plan-4", "loanType": "Student", "planName": "Plan 4", "monthlyThreshold": 2833.33, "deductionRate": 9, "sortOrder": 30 },
+    { "id": "sl-plan-5", "loanType": "Student", "planName": "Plan 5", "monthlyThreshold": 2083.33, "deductionRate": 9, "sortOrder": 40 },
+    { "id": "pgl", "loanType": "Postgraduate", "planName": "Postgraduate Loan", "monthlyThreshold": 1750, "deductionRate": 6, "sortOrder": 50 }
+  ]
+}
+  </script>
+
+  <main>
+    <header class="app-header">
+      <div class="nhs-mark">NHS</div>
+      <div class="title-block">
+        <strong>Paylip Calculator Admin</strong>
+        <span>Reference data for the standalone paylip calculator</span>
+      </div>
+      <a class="top-link" href="index.html">Calculator</a>
+    </header>
+
+    <section class="card">
+      <h1>Admin</h1>
+      <p>The default tables are embedded in this HTML file. Changes you save here are stored in this browser and used by the calculator page.</p>
+      <div class="tabs" id="tabs"></div>
+    </section>
+
+    <section class="card">
+      <div class="section-heading">
+        <h2 id="table-title"></h2>
+        <button id="add-row" type="button">Add row</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead id="table-head"></thead>
+          <tbody id="table-body"></tbody>
+        </table>
+      </div>
+      <div id="message" class="message" hidden></div>
+    </section>
+
+    <section class="card">
+      <h2>Backup and restore</h2>
+      <p>Use this to move your edited tables to another browser or keep a copy before making bigger changes.</p>
+      <textarea id="backup-text"></textarea>
+      <div class="button-row">
+        <button id="export-data" type="button">Export data</button>
+        <button id="import-data" type="button">Import data</button>
+        <button id="reset-data" class="text-button" type="button">Reset to HTML defaults</button>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const storageKey = "nhs-paylip-calculator-reference-v5";
+    const schemas = {
+      payElements: {
+        title: "Pay elements",
+        columns: [
+          ["name", "Name", "text"],
+          ["type", "Type", "select", ["Allowance", "Deduction"]],
+          ["defaultAmount", "Default amount", "number"],
+          ["taxable", "Tax", "checkbox"],
+          ["niable", "NI", "checkbox"],
+          ["pensionable", "Pension", "checkbox"]
+        ],
+        blank: { name: "", type: "Allowance", defaultAmount: 0, taxable: true, niable: true, pensionable: true }
+      },
+      afcRates: {
+        title: "Agenda for Change pay scales",
+        columns: [
+          ["band", "Band", "text"],
+          ["payStep", "Pay step", "text"],
+          ["annualSalary", "Annual salary", "number"],
+          ["sortOrder", "Display order", "number"]
+        ],
+        blank: { band: "", payStep: "", annualSalary: 0, sortOrder: 0 }
+      },
+      pensionBands: {
+        title: "NHS pension bands",
+        columns: [
+          ["from", "Earnings from", "number"],
+          ["to", "Earnings to", "nullable-number"],
+          ["rate", "Contribution %", "number"]
+        ],
+        blank: { from: 0, to: null, rate: 0 }
+      },
+      taxBands: {
+        title: "Income tax bands",
+        columns: [
+          ["name", "Band name", "text"],
+          ["from", "Annual from", "number"],
+          ["to", "Annual to", "nullable-number"],
+          ["rate", "Tax %", "number"]
+        ],
+        blank: { name: "", from: 0, to: null, rate: 0 }
+      },
+      niLetters: {
+        title: "NI category letters",
+        columns: [
+          ["letter", "Letter", "text"],
+          ["description", "Description", "text"],
+          ["monthlyLowerEarningsLimit", "Monthly LEL", "number"],
+          ["monthlyPrimaryThreshold", "Monthly PT", "number"],
+          ["monthlyUpperEarningsLimit", "Monthly UEL", "number"],
+          ["rateToPrimaryThreshold", "LEL to PT %", "number"],
+          ["rateToUpperEarningsLimit", "PT to UEL %", "number"],
+          ["rateAboveUpperEarningsLimit", "Above UEL %", "number"],
+          ["sortOrder", "Display order", "number"]
+        ],
+        blank: {
+          letter: "",
+          description: "",
+          monthlyLowerEarningsLimit: 559,
+          monthlyPrimaryThreshold: 1048,
+          monthlyUpperEarningsLimit: 4189,
+          rateToPrimaryThreshold: 0,
+          rateToUpperEarningsLimit: 8,
+          rateAboveUpperEarningsLimit: 2,
+          sortOrder: 0
+        }
+      },
+      loanPlans: {
+        title: "Student and postgraduate loans",
+        columns: [
+          ["loanType", "Loan type", "select", ["Student", "Postgraduate"]],
+          ["planName", "Plan name", "text"],
+          ["monthlyThreshold", "Monthly threshold", "number"],
+          ["deductionRate", "Deduction %", "number"],
+          ["sortOrder", "Display order", "number"]
+        ],
+        blank: {
+          loanType: "Student",
+          planName: "",
+          monthlyThreshold: 0,
+          deductionRate: 9,
+          sortOrder: 0
+        }
+      }
+    };
+    let activeTable = "payElements";
+
+    function defaultData() {
+      return JSON.parse(document.getElementById("reference-data").textContent);
+    }
+
+    function newId() {
+      return crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random());
+    }
+
+    function loadData() {
+      try {
+        return JSON.parse(localStorage.getItem(storageKey)) || defaultData();
+      } catch {
+        return defaultData();
+      }
+    }
+
+    function saveData(data, message) {
+      localStorage.setItem(storageKey, JSON.stringify(data));
+      showMessage(message || "Saved.");
+    }
+
+    function showMessage(message) {
+      const target = document.getElementById("message");
+      target.textContent = message;
+      target.hidden = false;
+      window.clearTimeout(showMessage.timer);
+      showMessage.timer = window.setTimeout(() => target.hidden = true, 3000);
+    }
+
+    function renderTabs() {
+      document.getElementById("tabs").innerHTML = Object.entries(schemas).map(([key, schema]) => (
+        `<button type="button" class="${key === activeTable ? "active" : ""}" data-table="${key}">${schema.title}</button>`
+      )).join("");
+    }
+
+    function inputHtml(row, field, type, options) {
+      const value = row[field];
+      if (activeTable === "payElements" && row.type === "Deduction" && (field === "niable" || field === "pensionable")) {
+        return `<span class="not-applicable">Not used</span>`;
+      }
+      if (type === "checkbox") return `<input type="checkbox" data-field="${field}"${value ? " checked" : ""}>`;
+      if (type === "select") {
+        return `<select data-field="${field}">${options.map(option => `<option value="${option}"${option === value ? " selected" : ""}>${option}</option>`).join("")}</select>`;
+      }
+      return `<input data-field="${field}" inputmode="${type.includes("number") ? "decimal" : "text"}" value="${value === null || value === undefined ? "" : String(value).replaceAll('"', "&quot;")}">`;
+    }
+
+    function renderTable() {
+      const data = loadData();
+      const schema = schemas[activeTable];
+      const rows = data[activeTable] || [];
+      document.getElementById("table-title").textContent = schema.title;
+      document.getElementById("table-head").innerHTML = `<tr>${schema.columns.map(([, label]) => `<th>${label}</th>`).join("")}<th>Actions</th></tr>`;
+      document.getElementById("table-body").innerHTML = rows.map(row => `
+        <tr data-row-id="${row.id}">
+          ${schema.columns.map(([field, , type, options]) => `<td>${inputHtml(row, field, type, options || [])}</td>`).join("")}
+          <td><button class="text-button delete-row" type="button">Delete</button></td>
+        </tr>
+      `).join("");
+    }
+
+    function updateCell(rowId, field, value, inputType) {
+      const data = loadData();
+      data[activeTable] = data[activeTable].map(row => {
+        if (row.id !== rowId) return row;
+        let nextValue = value;
+        if (inputType === "checkbox") nextValue = Boolean(value);
+        if (inputType === "number") nextValue = Number(value) || 0;
+        if (inputType === "nullable-number") nextValue = value === "" ? null : Number(value) || 0;
+        const nextRow = Object.assign({}, row, { [field]: nextValue });
+        if (activeTable === "payElements" && field === "type" && nextValue === "Deduction") {
+          nextRow.niable = false;
+          nextRow.pensionable = false;
+        }
+        return nextRow;
+      });
+      saveData(data);
+    }
+
+    document.addEventListener("click", event => {
+      const tab = event.target.dataset ? event.target.dataset.table : "";
+      if (tab) {
+        activeTable = tab;
+        renderTabs();
+        renderTable();
+        return;
+      }
+      if (event.target.id === "add-row") {
+        const data = loadData();
+        data[activeTable].push(Object.assign({ id: newId() }, schemas[activeTable].blank));
+        saveData(data, "Row added.");
+        renderTable();
+        return;
+      }
+      if (event.target.classList.contains("delete-row")) {
+        const rowId = event.target.closest("tr").dataset.rowId;
+        const data = loadData();
+        data[activeTable] = data[activeTable].filter(row => row.id !== rowId);
+        saveData(data, "Row deleted.");
+        renderTable();
+        return;
+      }
+      if (event.target.id === "export-data") {
+        document.getElementById("backup-text").value = JSON.stringify(loadData(), null, 2);
+        showMessage("Data exported.");
+        return;
+      }
+      if (event.target.id === "import-data") {
+        try {
+          const parsed = JSON.parse(document.getElementById("backup-text").value);
+          saveData(parsed, "Data imported.");
+          renderTabs();
+          renderTable();
+        } catch {
+          showMessage("The pasted data could not be read.");
+        }
+        return;
+      }
+      if (event.target.id === "reset-data") {
+        if (!confirm("Reset all admin tables to the values embedded in this HTML file?")) return;
+        saveData(defaultData(), "Defaults restored.");
+        renderTable();
+      }
+    });
+
+    document.addEventListener("input", event => {
+      const row = event.target.closest ? event.target.closest("tr") : null;
+      if (!row || !event.target.dataset.field) return;
+      const schemaColumn = schemas[activeTable].columns.find(column => column[0] === event.target.dataset.field);
+      const inputType = schemaColumn ? schemaColumn[2] : "text";
+      updateCell(row.dataset.rowId, event.target.dataset.field, event.target.type === "checkbox" ? event.target.checked : event.target.value, inputType);
+    });
+
+    document.addEventListener("change", event => {
+      const row = event.target.closest ? event.target.closest("tr") : null;
+      if (!row || !event.target.dataset.field) return;
+      const schemaColumn = schemas[activeTable].columns.find(column => column[0] === event.target.dataset.field);
+      const inputType = schemaColumn ? schemaColumn[2] : "text";
+      updateCell(row.dataset.rowId, event.target.dataset.field, event.target.type === "checkbox" ? event.target.checked : event.target.value, inputType);
+    });
+
+    if (!localStorage.getItem(storageKey)) saveData(defaultData(), "Defaults loaded from HTML.");
+    renderTabs();
+    renderTable();
+  </script>
+</body>
+</html>

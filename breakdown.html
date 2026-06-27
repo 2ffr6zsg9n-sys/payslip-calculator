@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Paylip Calculation Breakdown</title>
+  <style>
+    :root {
+      font-family: Arial, Helvetica, sans-serif;
+      color: #0b0c0c;
+      background: #f3f2f1;
+      --nhs-blue: #005eb8;
+      --nhs-dark-blue: #003f7e;
+      --border: #b1b4b6;
+      --muted: #505a5f;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-width: 320px; }
+    body::before { content: ""; display: block; height: 10px; background: var(--nhs-blue); }
+    main { width: min(960px, calc(100% - 40px)); margin: 0 auto; padding: 28px 0 56px; }
+    .nhs-mark {
+      display: inline-block;
+      padding: 5px 10px 3px;
+      background: var(--nhs-blue);
+      color: #fff;
+      font-size: 29px;
+      font-weight: 700;
+      letter-spacing: -1px;
+      line-height: 1;
+      margin-bottom: 24px;
+    }
+    .panel {
+      background: #fff;
+      border: 1px solid #d8dde0;
+      box-shadow: 0 2px 0 rgba(11, 12, 12, .08);
+      overflow: hidden;
+    }
+    .top {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: start;
+      padding: 24px;
+      background: var(--nhs-blue);
+      color: #fff;
+    }
+    h1, p { margin-top: 0; }
+    h1 { font-size: 34px; line-height: 1.1; margin-bottom: 6px; }
+    .top p { margin-bottom: 0; color: #d6e8f8; }
+    .top strong { font-size: 34px; white-space: nowrap; }
+    dl { margin: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); background: #f8f8f8; }
+    div.row { padding: 14px 16px; border-bottom: 1px solid #d8dde0; }
+    div.row:nth-child(odd) { border-right: 1px solid #d8dde0; }
+    dt { color: var(--muted); font-weight: 700; font-size: 15px; }
+    dd { margin: 4px 0 0; font-size: 20px; font-weight: 700; }
+    .notice {
+      margin-top: 18px;
+      border-left: 6px solid var(--nhs-blue);
+      background: #e8f1fb;
+      padding: 14px 16px;
+      font-weight: 700;
+    }
+    .empty {
+      padding: 24px;
+      font-weight: 700;
+    }
+    @media (max-width: 680px) {
+      main { width: min(100% - 24px, 960px); }
+      .top { display: block; }
+      .top strong { display: block; margin-top: 14px; }
+      dl { grid-template-columns: 1fr; }
+      div.row:nth-child(odd) { border-right: 0; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="nhs-mark">NHS</div>
+    <section class="panel">
+      <div class="top">
+        <div>
+          <h1>Calculation breakdown</h1>
+          <p>For the latest estimate calculated in this browser</p>
+        </div>
+        <strong id="net-pay">£0.00</strong>
+      </div>
+      <dl id="breakdown"></dl>
+      <div class="empty" id="empty-message">No breakdown has been calculated yet. Return to the calculator and create or recalculate a payslip estimate first.</div>
+    </section>
+    <div class="notice">This breakdown is for checking the estimate only. Your actual payslip is the confirmed record of your pay and deductions.</div>
+  </main>
+  <script>
+    function money(value) {
+      return Number(value || 0).toLocaleString("en-GB", { style: "currency", currency: "GBP" });
+    }
+
+    function render() {
+      const stored = localStorage.getItem("nhs-paylip-calculator-breakdown");
+      if (!stored) return;
+      try {
+        const data = JSON.parse(stored);
+        document.getElementById("net-pay").textContent = money(data.netPay);
+        document.getElementById("breakdown").innerHTML = (data.rows || []).map(row => (
+          `<div class="row"><dt>${row.label}</dt><dd>${money(row.value)}</dd></div>`
+        )).join("");
+        document.getElementById("empty-message").style.display = "none";
+      } catch {
+        document.getElementById("empty-message").textContent = "The saved breakdown could not be read. Return to the calculator and recalculate the estimate.";
+      }
+    }
+
+    render();
+  </script>
+</body>
+</html>
