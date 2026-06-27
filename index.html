@@ -419,11 +419,11 @@
                 <label for="tax-calculation-basis">Tax calculation basis</label>
                 <select id="tax-calculation-basis">
                   <option value="cumulative">Use my previous pay and tax figures for a more accurate estimate</option>
-                  <option value="month1">Use a Week 1/Month 1 estimate</option>
+                  <option value="month1">Calculate without using previous taxable pay figures (less accurate)</option>
                 </select>
               </div>
               <input id="cumulative-tax" class="hidden" type="checkbox" checked aria-hidden="true" tabindex="-1">
-              <p class="field-hint">The estimate is usually more accurate if you enter the taxable pay and tax paid figures from your previous month’s payslip. Choose Week 1/Month 1 if you do not want to enter those figures.</p>
+              <p class="field-hint">The estimate is usually more accurate if you enter the taxable pay and tax paid figures from your previous month’s payslip. Choose the less accurate option if you do not want to enter those figures.</p>
             </div>
             <div class="question-step hidden" data-question-step="month">
               <h2>Which payslip do you want to estimate?</h2>
@@ -431,7 +431,7 @@
                 <label for="month">Payslip month</label>
                 <select id="month"></select>
               </div>
-              <p class="field-hint">We use this to work out which previous payslip figures you should enter. If you choose April, the estimate will be treated like a Week 1/Month 1 calculation.</p>
+              <p class="field-hint">We use this to work out which previous payslip figures you should enter. If you choose April, the estimate will be calculated without using previous taxable pay figures.</p>
             </div>
             <div class="question-step hidden" data-question-step="tax-code">
               <h2>What is your tax code?</h2>
@@ -1166,7 +1166,7 @@
         ["Current month allowance used", currentMonthAllowance],
         ["Taxable pay after current month allowance", taxableThisMonthAfterAllowance],
         ["Tax due this month", calculatedTax],
-        [isCumulative ? "Tax paid year to date after this payslip" : "Month 1 tax due", cumulativeTaxDue]
+        [isCumulative ? "Tax paid year to date after this payslip" : "Tax due without previous taxable pay figures", cumulativeTaxDue]
       ];
       document.getElementById("calculation-notes").innerHTML = breakdownRows.map(([label, value]) => `<div><dt>${label}</dt><dd>${money(value)}</dd></div>`).join("");
       localStorage.setItem("nhs-paylip-calculator-breakdown", JSON.stringify({
