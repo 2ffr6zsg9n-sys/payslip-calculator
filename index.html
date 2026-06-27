@@ -259,6 +259,10 @@
       gap: 28px;
       align-items: start;
     }
+    .line-panel > .field-hint {
+      grid-column: 1 / -1;
+      margin: 0;
+    }
     .override-panel {
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -603,10 +607,6 @@
         <a class="breakdown-link" id="breakdown-link" href="breakdown.html" target="_blank" rel="noopener">View calculation breakdown</a>
       </aside>
       <div class="step-actions">
-        <div>
-          <label for="basic-pay-override">Change Basic Pay amount</label>
-          <input id="basic-pay-override" inputmode="decimal" placeholder="Blank keeps calculated Basic Pay">
-        </div>
         <button id="recalculate-payslip" type="button">Recalculate payslip</button>
         <p class="field-hint">After changing Basic Pay, allowances, deductions or overrides, click Recalculate payslip to refresh the estimate.</p>
       </div>
@@ -652,6 +652,13 @@
       <section class="override-panel">
         <div class="wide-field">
           <label class="inline-checkbox"><input id="calculate-statutory-deductions" type="checkbox" checked> Calculate PAYE, NI, Pension</label>
+        </div>
+        <div class="wide-field">
+          <label class="inline-checkbox"><input id="calculate-basic-pay" type="checkbox" checked> Calculate Basic Pay</label>
+        </div>
+        <div class="basic-pay-override-field hidden">
+          <label for="basic-pay-override">Basic Pay</label>
+          <input id="basic-pay-override" inputmode="decimal" placeholder="Enter Basic Pay amount">
         </div>
         <div class="override-field hidden">
           <label for="override-tax">PAYE tax</label>
@@ -971,8 +978,8 @@
     }
 
     function monthlyBasePayForCalculation() {
-      const override = document.getElementById("basic-pay-override").value.trim();
-      return override === "" ? monthlyBasePayFromInputs() : numberValue(override);
+      const calculateBasicPay = document.getElementById("calculate-basic-pay").checked;
+      return calculateBasicPay ? monthlyBasePayFromInputs() : numberValue(document.getElementById("basic-pay-override").value);
     }
 
     function updatePensionFields(resetOverride) {
@@ -988,6 +995,7 @@
       const calculateDeductions = document.getElementById("calculate-statutory-deductions").checked;
       const hasStudentLoan = document.getElementById("has-student-loan").value === "yes";
       const hasPostgraduateLoan = document.getElementById("has-postgraduate-loan").value === "yes";
+      document.querySelector(".basic-pay-override-field").classList.toggle("hidden", document.getElementById("calculate-basic-pay").checked);
       document.querySelectorAll(".override-field").forEach(field => {
         const loanOverride = field.dataset.loanOverride;
         const applies = !loanOverride
@@ -1198,11 +1206,11 @@
       const lineContainer = event.target.closest ? event.target.closest(".pay-line") : null;
       if (!lineContainer) {
         if (["tax-calculation-basis", "cumulative-tax", "month", "new-starter"].includes(event.target.id)) updateCumulativeFields();
-        if (event.target.id === "calculate-statutory-deductions") updateOverrideFields();
+        if (["calculate-statutory-deductions", "calculate-basic-pay"].includes(event.target.id)) updateOverrideFields();
         if (["has-student-loan", "has-postgraduate-loan"].includes(event.target.id)) updateLoanFields();
         if (["use-custom-allowances", "use-custom-deductions"].includes(event.target.id)) updateCustomSections();
         if (event.target.id === "use-afc-rates") updatePayBasisFields();
-        if (["monthly-salary", "contracted-hours"].includes(event.target.id)) updatePensionFields(false);
+        if (["monthly-salary", "contracted-hours", "basic-pay-override"].includes(event.target.id)) updatePensionFields(false);
         if (["tax-calculation-basis", "cumulative-tax", "month", "new-starter", "has-student-loan", "has-postgraduate-loan", "use-afc-rates", "in-pension"].includes(event.target.id)) renderScenarioStep();
         return;
       }
@@ -1230,7 +1238,10 @@
       const lineContainer = event.target.closest ? event.target.closest(".pay-line") : null;
       if (!lineContainer) {
         if (["tax-calculation-basis", "cumulative-tax", "month", "new-starter"].includes(event.target.id)) updateCumulativeFields();
-        if (event.target.id === "calculate-statutory-deductions") updateOverrideFields();
+        if (["calculate-statutory-deductions", "calculate-basic-pay"].includes(event.target.id)) {
+          updateOverrideFields();
+          updatePensionFields(false);
+        }
         if (["has-student-loan", "has-postgraduate-loan"].includes(event.target.id)) updateLoanFields();
         if (["use-custom-allowances", "use-custom-deductions"].includes(event.target.id)) updateCustomSections();
         if (event.target.id === "use-afc-rates") {
