@@ -840,9 +840,15 @@
 
     function taxCodeAllowance(taxCode) {
       const code = String(taxCode || "").trim().toUpperCase().replace(/\s+/g, "");
-      if (!code || ["BR", "D0", "D1", "NT"].includes(code) || code.startsWith("K")) return code ? 0 : 12570;
+      if (!code) return 12570;
       const digits = code.match(/\d+/);
+      if (code.startsWith("K")) return digits ? -Number(digits[0]) * 10 : 0;
+      if (["BR", "D0", "D1", "NT"].includes(code)) return 0;
       return digits ? Number(digits[0]) * 10 : 12570;
+    }
+
+    function isKTaxCode(taxCode) {
+      return String(taxCode || "").trim().toUpperCase().replace(/\s+/g, "").startsWith("K");
     }
 
     function calculateBandCharge(amount, bands) {
@@ -1123,10 +1129,11 @@
       const isCumulative = document.getElementById("cumulative-tax").checked && monthNumber > 1;
       const previousTaxable = isCumulative ? numberValue(document.getElementById("previous-taxable").value) : 0;
       const previousTax = isCumulative ? numberValue(document.getElementById("previous-tax-paid").value) : 0;
+      const taxCode = document.getElementById("tax-code").value;
       const taxableBenefits = document.getElementById("has-taxable-benefits").value === "yes"
         ? numberValue(document.getElementById("taxable-benefits-amount").value)
         : 0;
-      const allowanceAmount = taxCodeAllowance(document.getElementById("tax-code").value);
+      const allowanceAmount = taxCodeAllowance(taxCode);
       const activeCustomAllowances = document.getElementById("use-custom-allowances").checked ? state.customAllowances : [];
       const activeCustomDeductions = document.getElementById("use-custom-deductions").checked ? state.customDeductions : [];
       const allAllowances = state.allowances.concat(activeCustomAllowances);
@@ -1159,7 +1166,9 @@
         to: band.to === null ? null : band.to / 12,
         rate: band.rate
       }));
-      const calculatedTax = calculateBandCharge(taxablePayUsedForTax, monthlyTaxBands);
+      const uncappedCalculatedTax = calculateBandCharge(taxablePayUsedForTax, monthlyTaxBands);
+      const kCodeTaxCap = grossPay * 0.5;
+      const calculatedTax = isKTaxCode(taxCode) ? Math.min(uncappedCalculatedTax, kCodeTaxCap) : uncappedCalculatedTax;
       const cumulativeTaxDue = previousTax + calculatedTax;
       const selectedNILetter = data.niLetters.find(letter => letter.id === document.getElementById("ni-letter").value)
         || data.niLetters.find(letter => letter.letter === "A")
@@ -1215,6 +1224,7 @@
         ["Current month allowance used", currentMonthAllowance],
         ["Taxable pay after current month allowance", taxableThisMonthAfterAllowance],
         ["Taxable pay used for PAYE after rounding", taxablePayUsedForTax],
+        ...(isKTaxCode(taxCode) ? [["K code PAYE cap", kCodeTaxCap]] : []),
         ["Tax due this month", calculatedTax],
         [isCumulative ? "Tax paid year to date after this payslip" : "Tax due without previous taxable pay figures", cumulativeTaxDue]
       ];
