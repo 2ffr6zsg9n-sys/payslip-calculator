@@ -560,6 +560,25 @@
               </div>
               <p class="field-hint">Choose the band that matches the pension percentage rate shown on your latest payslip. The calculator will suggest one, but you can change it.</p>
             </div>
+            <div class="question-step hidden" data-question-step="taxable-benefits">
+              <h2>Do you have any taxable benefits on your payslip?</h2>
+              <div>
+                <label for="has-taxable-benefits">Taxable benefits</label>
+                <select id="has-taxable-benefits">
+                  <option value="no">No</option>
+                  <option value="yes">Yes</option>
+                </select>
+              </div>
+              <p class="field-hint">This might include benefits that increase your taxable pay but are not paid to you as cash.</p>
+            </div>
+            <div class="question-step hidden taxable-benefits-field" data-question-step="taxable-benefits-amount">
+              <h2>What taxable benefit amount is shown on your payslip?</h2>
+              <div>
+                <label for="taxable-benefits-amount">Taxable benefits amount</label>
+                <input id="taxable-benefits-amount" inputmode="decimal">
+              </div>
+              <p class="field-hint">Enter the taxable pay figure for the benefits shown on your payslip. This will be added to taxable pay for PAYE only.</p>
+            </div>
             <div class="question-step hidden" data-question-step="ready">
               <h2>Ready to create your estimate</h2>
               <p class="field-hint">You can add extra allowances and deductions on the next screen and then recalculate the payslip.</p>
@@ -725,6 +744,8 @@
       { id: "afc-band", visible: () => document.getElementById("use-afc-rates").value === "yes" },
       { id: "pension-member" },
       { id: "pension-band", visible: () => document.getElementById("in-pension").checked },
+      { id: "taxable-benefits" },
+      { id: "taxable-benefits-amount", visible: () => document.getElementById("has-taxable-benefits").value === "yes" },
       { id: "ready" }
     ];
     const state = {
@@ -892,6 +913,7 @@
       syncCumulativeTaxChoice();
       updateCumulativeFields();
       updateLoanFields();
+      updateTaxableBenefitFields();
       updatePayBasisFields();
       updatePensionFields(false);
       const visibleSteps = visibleScenarioSteps();
@@ -950,6 +972,10 @@
       document.querySelector(".student-loan-field").classList.toggle("hidden", document.getElementById("has-student-loan").value !== "yes");
       document.querySelector(".postgraduate-loan-field").classList.toggle("hidden", document.getElementById("has-postgraduate-loan").value !== "yes");
       updateOverrideFields();
+    }
+
+    function updateTaxableBenefitFields() {
+      document.querySelector(".taxable-benefits-field").classList.toggle("hidden", document.getElementById("has-taxable-benefits").value !== "yes");
     }
 
     function updateCumulativeFields() {
@@ -1106,6 +1132,9 @@
       const isCumulative = document.getElementById("cumulative-tax").checked && monthNumber > 1;
       const previousTaxable = isCumulative ? numberValue(document.getElementById("previous-taxable").value) : 0;
       const previousTax = isCumulative ? numberValue(document.getElementById("previous-tax-paid").value) : 0;
+      const taxableBenefits = document.getElementById("has-taxable-benefits").value === "yes"
+        ? numberValue(document.getElementById("taxable-benefits-amount").value)
+        : 0;
       const allowanceAmount = taxCodeAllowance(document.getElementById("tax-code").value);
       const activeCustomAllowances = document.getElementById("use-custom-allowances").checked ? state.customAllowances : [];
       const activeCustomDeductions = document.getElementById("use-custom-deductions").checked ? state.customDeductions : [];
@@ -1127,7 +1156,7 @@
       const calculateDeductions = document.getElementById("calculate-statutory-deductions").checked;
       const pensionOverride = document.getElementById("override-pension").value.trim();
       const finalPension = calculateDeductions || pensionOverride === "" ? calculatedPension : numberValue(pensionOverride);
-      const taxableThisMonth = Math.max(0, monthlyBasePay + taxableAllowance - taxableDeduction - finalPension);
+      const taxableThisMonth = Math.max(0, monthlyBasePay + taxableAllowance + taxableBenefits - taxableDeduction - finalPension);
       const cumulativeTaxablePayUsed = previousTaxable + taxableThisMonth;
       const currentMonthAllowance = allowanceAmount / 12;
       const taxableThisMonthAfterAllowance = Math.max(0, taxableThisMonth - currentMonthAllowance);
@@ -1185,6 +1214,7 @@
       const breakdownRows = [
         ["Previous taxable pay entered", previousTaxable],
         ["Taxable pay this month", taxableThisMonth],
+        ["Taxable benefits included", taxableBenefits],
         ["Taxable pay year to date used", cumulativeTaxablePayUsed],
         ["Previous tax paid entered", previousTax],
         [`NI pay this month (${selectedNILetter?.letter || "A"})`, niableThisMonth],
@@ -1227,10 +1257,11 @@
         if (["tax-calculation-basis", "cumulative-tax", "month", "new-starter"].includes(event.target.id)) updateCumulativeFields();
         if (["calculate-statutory-deductions", "calculate-basic-pay"].includes(event.target.id)) updateOverrideFields();
         if (["has-student-loan", "has-postgraduate-loan"].includes(event.target.id)) updateLoanFields();
+        if (event.target.id === "has-taxable-benefits") updateTaxableBenefitFields();
         if (["use-custom-allowances", "use-custom-deductions"].includes(event.target.id)) updateCustomSections();
         if (event.target.id === "use-afc-rates") updatePayBasisFields();
         if (["monthly-salary", "contracted-hours", "basic-pay-override"].includes(event.target.id)) updatePensionFields(false);
-        if (["tax-calculation-basis", "cumulative-tax", "month", "new-starter", "has-student-loan", "has-postgraduate-loan", "use-afc-rates", "in-pension"].includes(event.target.id)) renderScenarioStep();
+        if (["tax-calculation-basis", "cumulative-tax", "month", "new-starter", "has-student-loan", "has-postgraduate-loan", "has-taxable-benefits", "use-afc-rates", "in-pension"].includes(event.target.id)) renderScenarioStep();
         return;
       }
       const type = lineContainer.dataset.type;
@@ -1262,6 +1293,7 @@
           updatePensionFields(false);
         }
         if (["has-student-loan", "has-postgraduate-loan"].includes(event.target.id)) updateLoanFields();
+        if (event.target.id === "has-taxable-benefits") updateTaxableBenefitFields();
         if (["use-custom-allowances", "use-custom-deductions"].includes(event.target.id)) updateCustomSections();
         if (event.target.id === "use-afc-rates") {
           updatePayBasisFields();
@@ -1270,7 +1302,7 @@
         if (event.target.id === "afc-band") updatePensionFields(false);
         if (event.target.id === "in-pension") updatePensionFields(false);
         if (event.target.id === "pension-band") state.pensionBandOverridden = true;
-        if (["tax-calculation-basis", "cumulative-tax", "month", "new-starter", "has-student-loan", "has-postgraduate-loan", "use-afc-rates", "in-pension"].includes(event.target.id)) renderScenarioStep();
+        if (["tax-calculation-basis", "cumulative-tax", "month", "new-starter", "has-student-loan", "has-postgraduate-loan", "has-taxable-benefits", "use-afc-rates", "in-pension"].includes(event.target.id)) renderScenarioStep();
         return;
       }
       const type = lineContainer.dataset.type;
