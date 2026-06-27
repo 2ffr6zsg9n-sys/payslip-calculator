@@ -398,7 +398,6 @@
         <strong>Paylip Calculator</strong>
         <span>Scenario modelling for monthly net pay</span>
       </div>
-      <a class="top-link" href="admin.html">Admin</a>
     </header>
 
     <div class="scenario-step" id="scenario-step">
@@ -408,7 +407,14 @@
           <p class="field-hint">Answer one question at a time. You can go back and change anything before creating the payslip estimate.</p>
           <div class="wizard-progress" id="wizard-progress"></div>
           <div class="field-grid">
-            <div class="question-step" data-question-step="month">
+            <div class="question-step" data-question-step="welcome">
+              <h2>Welcome to the Paylip Calculator</h2>
+              <p>This calculator can help you estimate your monthly net pay before your actual payslip is produced.</p>
+              <p>You will be asked one question at a time. You can go back if you need to change an answer, then add any extra allowances or deductions before calculating your estimate.</p>
+              <div class="notice">This calculator gives an estimate only. Your actual payslip is the confirmed record of your pay, deductions and net pay.</div>
+              <p class="field-hint">Copyright South West Yorkshire Teaching Partnership NHS FT.</p>
+            </div>
+            <div class="question-step hidden" data-question-step="month">
               <h2>Which payslip do you want to estimate?</h2>
               <div>
                 <label for="month">Payslip month</label>
@@ -664,6 +670,7 @@
     const maxLines = 10;
     const months = ["April", "May", "June", "July", "August", "September", "October", "November", "December", "January", "February", "March"];
     const scenarioSteps = [
+      { id: "welcome" },
       { id: "month" },
       { id: "tax-code" },
       { id: "new-starter" },
@@ -672,7 +679,6 @@
       { id: "student-loan" },
       { id: "student-plan", visible: () => document.getElementById("has-student-loan").value === "yes" },
       { id: "postgraduate-loan" },
-      { id: "postgraduate-plan", visible: () => document.getElementById("has-postgraduate-loan").value === "yes" },
       { id: "pay-basis" },
       { id: "monthly-salary", visible: () => document.getElementById("use-afc-rates").value === "no" },
       { id: "contracted-hours", visible: () => document.getElementById("use-afc-rates").value === "yes" },
