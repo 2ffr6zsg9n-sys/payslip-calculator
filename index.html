@@ -494,6 +494,7 @@
                 <label for="student-loan-plan">Student loan plan</label>
                 <select id="student-loan-plan"></select>
               </div>
+              <p class="field-hint">Use the plan shown on your latest payslip if it is available. As a guide: Plan 1 is for older English or Welsh loans and Northern Ireland loans; Plan 2 is for most English and Welsh undergraduate students who started between 2012 and 2023; Plan 4 is for Scottish undergraduate loans; Plan 5 is for English undergraduate students who started from 2023 onwards.</p>
             </div>
             <div class="question-step hidden" data-question-step="postgraduate-loan">
               <h2>Do you have a postgraduate loan?</h2>
@@ -936,7 +937,7 @@
       document.getElementById("student-loan-plan").innerHTML = data.loanPlans
         .filter(plan => plan.loanType === "Student")
         .sort((a, b) => a.sortOrder - b.sortOrder)
-        .map(plan => `<option value="${plan.id}">${plan.planName}</option>`)
+        .map(plan => `<option value="${plan.id}"${plan.id === "sl-plan-2" ? " selected" : ""}>${plan.planName}</option>`)
         .join("");
       document.getElementById("postgraduate-loan-plan").innerHTML = data.loanPlans
         .filter(plan => plan.loanType === "Postgraduate")
