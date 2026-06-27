@@ -1043,7 +1043,9 @@
       const data = referenceData();
       const list = type === "Allowance" ? state.allowances : state.deductions;
       const target = document.getElementById(type === "Allowance" ? "allowance-lines" : "deduction-lines");
-      const elements = data.payElements.filter(element => element.type === type);
+      const elements = data.payElements
+        .filter(element => element.type === type)
+        .sort((a, b) => a.name.localeCompare(b.name));
       target.innerHTML = list.map((line, index) => `
         <div class="pay-line" data-line-id="${line.id}" data-type="${type}">
           <div>
@@ -1149,6 +1151,7 @@
       const cumulativeTaxablePayUsed = previousTaxable + taxableThisMonth;
       const currentMonthAllowance = allowanceAmount / 12;
       const taxableThisMonthAfterAllowance = Math.max(0, taxableThisMonth - currentMonthAllowance);
+      const taxablePayUsedForTax = Math.floor(taxableThisMonthAfterAllowance);
       const monthlyTaxBands = data.taxBands.map(band => ({
         id: band.id,
         name: band.name,
@@ -1156,7 +1159,7 @@
         to: band.to === null ? null : band.to / 12,
         rate: band.rate
       }));
-      const calculatedTax = calculateBandCharge(taxableThisMonthAfterAllowance, monthlyTaxBands);
+      const calculatedTax = calculateBandCharge(taxablePayUsedForTax, monthlyTaxBands);
       const cumulativeTaxDue = previousTax + calculatedTax;
       const selectedNILetter = data.niLetters.find(letter => letter.id === document.getElementById("ni-letter").value)
         || data.niLetters.find(letter => letter.letter === "A")
@@ -1211,6 +1214,7 @@
         ["Pensionable pay this month", pensionableThisMonth],
         ["Current month allowance used", currentMonthAllowance],
         ["Taxable pay after current month allowance", taxableThisMonthAfterAllowance],
+        ["Taxable pay used for PAYE after rounding", taxablePayUsedForTax],
         ["Tax due this month", calculatedTax],
         [isCumulative ? "Tax paid year to date after this payslip" : "Tax due without previous taxable pay figures", cumulativeTaxDue]
       ];
