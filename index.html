@@ -572,7 +572,7 @@
             </div>
             <div class="question-step hidden" data-question-step="ready">
               <h2>Ready to create your estimate</h2>
-              <p class="field-hint">You can add extra allowances and deductions on the next screen and then recalculate the payslip.</p>
+              <p class="field-hint">You can add extra payments and deductions on the next screen and then recalculate the payslip.</p>
               <div class="notice">This calculator gives an estimate only. You should always refer to your actual payslip for your confirmed pay, deductions and net pay.</div>
             </div>
           </div>
@@ -601,7 +601,7 @@
         </div>
         <div class="payslip-columns">
           <section>
-            <h3>Allowances</h3>
+            <h3>Payments</h3>
             <div id="allowance-output"></div>
           </section>
           <section>
@@ -618,23 +618,23 @@
       </aside>
       <div class="step-actions">
         <button id="recalculate-payslip" type="button">Recalculate payslip</button>
-        <p class="field-hint">After changing Basic Pay, allowances, deductions or overrides, click Recalculate payslip to refresh the estimate.</p>
+        <p class="field-hint">After changing Basic Pay, payments, deductions or overrides, click Recalculate payslip to refresh the estimate.</p>
       </div>
       <form class="line-panel">
-        <p class="field-hint">You can add allowances and deductions to this estimate. Common items are in the drop-down lists, or you can add your own user-defined allowances and deductions below.</p>
+        <p class="field-hint">You can add payments and deductions to this estimate. Common items are in the drop-down lists, or you can add your own user-defined payments and deductions below.</p>
         <section class="scenario-panel">
           <div class="section-heading">
-            <h2>Allowances</h2>
+            <h2>Payments</h2>
             <button id="add-allowance" type="button">Add line</button>
           </div>
           <div class="line-list" id="allowance-lines"></div>
           <div class="step-actions">
-            <label class="inline-checkbox"><input id="use-custom-allowances" type="checkbox"> Add user-defined allowances</label>
+            <label class="inline-checkbox"><input id="use-custom-allowances" type="checkbox"> Add user-defined payments</label>
           </div>
           <div class="custom-lines hidden" id="custom-allowance-panel">
             <div class="section-heading">
-              <h2>User-defined allowances</h2>
-              <button id="add-custom-allowance" type="button">Add custom allowance</button>
+              <h2>User-defined payments</h2>
+              <button id="add-custom-allowance" type="button">Add custom payment</button>
             </div>
             <div class="line-list" id="custom-allowance-lines"></div>
           </div>
@@ -1045,6 +1045,10 @@
       });
     }
 
+    function payLineTypeLabel(type) {
+      return type === "Allowance" ? "payment" : "deduction";
+    }
+
     function renderLineList(type) {
       const data = referenceData();
       const list = type === "Allowance" ? state.allowances : state.deductions;
@@ -1057,7 +1061,7 @@
           <div>
             <label>Line ${index + 1}</label>
             <select data-field="elementId">
-              <option value="">Select ${type.toLowerCase()}</option>
+              <option value="">Select ${payLineTypeLabel(type)}</option>
               ${elements.map(element => `<option value="${element.id}"${element.id === line.elementId ? " selected" : ""}>${element.name}</option>`).join("")}
             </select>
           </div>
@@ -1076,7 +1080,7 @@
       target.innerHTML = list.map((line, index) => `
         <div class="pay-line" data-line-id="${line.id}" data-custom-type="${type}">
           <div>
-            <label>Custom ${type.toLowerCase()} ${index + 1}</label>
+            <label>Custom ${payLineTypeLabel(type)} ${index + 1}</label>
             <input data-field="name" value="${String(line.name || "").replaceAll('"', "&quot;")}" placeholder="Name">
           </div>
           <div>
@@ -1200,8 +1204,8 @@
       document.getElementById("net-pay-bottom").textContent = money(netPay);
       document.getElementById("allowance-output").innerHTML = [
         payRow("Basic Pay", monthlyBasePay),
-        ...allAllowances.filter(line => numberValue(line.amount) !== 0).map(line => payRow(line.name || "Allowance", numberValue(line.amount))),
-        payRow("Total allowances", grossPay, "", true)
+        ...allAllowances.filter(line => numberValue(line.amount) !== 0).map(line => payRow(line.name || "Payment", numberValue(line.amount))),
+        payRow("Total payments", grossPay, "", true)
       ].join("");
       document.getElementById("deduction-output").innerHTML = [
         payRow("PAYE", tax),
