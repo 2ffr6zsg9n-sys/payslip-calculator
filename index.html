@@ -228,6 +228,7 @@
     body.print-preview .step-actions,
     body.print-preview .line-panel,
     body.print-preview .override-panel,
+    body.print-preview .local-data-panel,
     body.print-preview .notice,
     body.print-preview .breakdown-link {
       display: none !important;
@@ -297,6 +298,13 @@
       box-shadow: 0 2px 0 rgba(11, 12, 12, .08);
       padding: 18px;
     }
+    .local-data-panel {
+      background: #fff;
+      border: 1px solid #d8dde0;
+      box-shadow: 0 2px 0 rgba(11, 12, 12, .08);
+      padding: 18px;
+    }
+    .local-data-panel p { margin: 0 0 14px; }
     @media (max-width: 1180px) {
       .calculator-layout { grid-template-columns: 1fr; }
       .payslip { position: static; }
@@ -315,7 +323,7 @@
     @page { size: A4 landscape; margin: 10mm; }
     @media print {
       :root, body { background: #fff; }
-      body::before, .app-header, #scenario-step, .print-preview-actions, .payslip-actions, .step-actions, .line-panel, .override-panel, .notice, .breakdown-link {
+      body::before, .app-header, #scenario-step, .print-preview-actions, .payslip-actions, .step-actions, .line-panel, .override-panel, .local-data-panel, .notice, .breakdown-link {
         display: none !important;
       }
       main { width: 100%; padding: 0; }
@@ -1094,7 +1102,7 @@
             <div class="question-step" data-question-step="welcome">
               <h2>Welcome to the Payslip Calculator</h2>
               <p>This calculator can help you estimate your monthly net pay before your actual payslip is produced.</p>
-              <p class="field-hint">Privacy: no pay details are stored or sent anywhere. All calculations are made within your browser.</p>
+              <p class="field-hint">Privacy: this calculator runs in your browser and does not send your details anywhere. It may save reference settings and the latest calculation breakdown locally on your device so the app works correctly. After viewing your payslip calculation, you can use the clear locally stored data option to delete this data from your browser.</p>
               <div class="notice">This calculator gives an estimate only. Your actual payslip is the confirmed record of your pay, deductions and net pay.</div>
               <p class="field-hint">Copyright South West Yorkshire Teaching Partnership NHS FT.</p>
             </div>
@@ -1373,6 +1381,11 @@
           <label for="override-postgraduate-loan">Postgraduate loan</label>
           <input id="override-postgraduate-loan" inputmode="decimal" placeholder="Blank keeps calculated postgraduate loan">
         </div>
+      </section>
+
+      <section class="local-data-panel">
+        <p class="field-hint">This app stores some data locally on your device, such as reference settings and the latest calculation breakdown. You can clear this locally stored data and return to the welcome page.</p>
+        <button class="secondary-button" id="clear-local-data" type="button">Clear locally stored data</button>
       </section>
 
     </div>
@@ -2062,6 +2075,12 @@
         } else {
           window.location.href = event.target.href;
         }
+      }
+      if (event.target.id === "clear-local-data") {
+        Object.keys(localStorage)
+          .filter(key => key.startsWith("nhs-paylip-calculator-"))
+          .forEach(key => localStorage.removeItem(key));
+        window.location.href = window.location.pathname;
       }
       if (event.target.id === "add-allowance") addLine("Allowance");
       if (event.target.id === "add-deduction") addLine("Deduction");
