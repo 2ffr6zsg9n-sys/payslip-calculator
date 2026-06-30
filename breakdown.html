@@ -18,6 +18,13 @@
     body { margin: 0; min-width: 320px; }
     body::before { content: ""; display: block; height: 10px; background: var(--nhs-blue); }
     main { width: min(960px, calc(100% - 40px)); margin: 0 auto; padding: 28px 0 56px; }
+    .page-header {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: center;
+      margin-bottom: 24px;
+    }
     .nhs-mark {
       display: inline-block;
       padding: 5px 10px 3px;
@@ -27,7 +34,21 @@
       font-weight: 700;
       letter-spacing: -1px;
       line-height: 1;
-      margin-bottom: 24px;
+    }
+    button {
+      border: 2px solid var(--nhs-blue);
+      background: #fff;
+      color: var(--nhs-blue);
+      cursor: pointer;
+      font: inherit;
+      font-weight: 700;
+      padding: 10px 14px;
+    }
+    button:hover { background: #e8f1fb; }
+    button:focus {
+      outline: 3px solid #ffdd00;
+      outline-offset: 0;
+      box-shadow: inset 0 0 0 2px #0b0c0c;
     }
     .panel {
       background: #fff;
@@ -66,6 +87,7 @@
     }
     @media (max-width: 680px) {
       main { width: min(100% - 24px, 960px); }
+      .page-header { align-items: flex-start; flex-wrap: wrap; }
       .top { display: block; }
       .top strong { display: block; margin-top: 14px; }
       dl { grid-template-columns: 1fr; }
@@ -75,7 +97,10 @@
 </head>
 <body>
   <main>
-    <div class="nhs-mark">NHS</div>
+    <div class="page-header">
+      <div class="nhs-mark">NHS</div>
+      <button id="close-breakdown" type="button">Close breakdown</button>
+    </div>
     <section class="panel">
       <div class="top">
         <div>
@@ -126,6 +151,14 @@
       )).join("");
       document.getElementById("empty-message").style.display = "none";
     }
+
+    document.getElementById("close-breakdown").addEventListener("click", () => {
+      if (window.opener) window.opener.postMessage({ type: "paylip-show-payslip" }, "*");
+      window.close();
+      setTimeout(() => {
+        if (!window.closed) window.location.href = "index.html#payslip";
+      }, 150);
+    });
 
     window.addEventListener("message", event => {
       if (!event.data || event.data.type !== "paylip-breakdown-data") return;

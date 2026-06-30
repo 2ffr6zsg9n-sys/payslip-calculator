@@ -299,6 +299,14 @@
       font-weight: 700;
     }
     .net-pay-bottom strong { font-size: 30px; white-space: nowrap; }
+    .afc-scenario-details {
+      padding: 10px 24px 16px;
+      border-top: 1px solid #d8dde0;
+      background: #fff;
+      color: var(--nhs-dark-grey);
+      font-size: 16px;
+      font-weight: 400;
+    }
     .notice {
       margin-top: 18px;
       border-left: 6px solid var(--nhs-blue);
@@ -1174,12 +1182,12 @@
               <div>
                 <label for="tax-calculation-basis">Tax calculation basis</label>
                 <select id="tax-calculation-basis">
-                  <option value="cumulative">Use the pay and tax figures from my last payslip (more accurate estimate)</option>
-                  <option value="month1">Calculate without using previous taxable pay figures (less accurate)</option>
+                  <option value="cumulative">Use the pay and tax figures from my last payslip</option>
+                  <option value="month1">Calculate without using previous taxable pay figures</option>
                 </select>
               </div>
               <input id="cumulative-tax" class="hidden" type="checkbox" checked aria-hidden="true" tabindex="-1">
-              <p class="field-hint">The estimate is usually more accurate if you enter the taxable pay and tax paid figures from your previous month’s payslip. Choose the less accurate option if you do not want to enter those figures.</p>
+              <p class="field-hint">Tax can be calculated on a year-to-date basis or just a single month at a time. If your payslip says the word 'CUMUL' after your tax code then you should choose the first option above and supply your taxable pay figures when asked to do so. If your payslip says 'NONCUM' after your tax code then please select the second option above and you won't need to provide your taxable pay figures. If you don't have your taxable pay figures to hand, select the second option but bear in mind this could lead to a less accurate estimate.</p>
             </div>
             <div class="question-step hidden" data-question-step="month">
               <h2>Which payslip do you want to estimate?</h2>
@@ -1221,7 +1229,7 @@
                   <input id="previous-tax-paid" inputmode="decimal">
                 </div>
               </div>
-              <p class="field-hint ytd-guidance">The year-to-date taxable pay and year-to-date tax paid figures are the figures shown next to your year-to-date gross pay and NI letter in the bottom left-hand corner of your payslip.</p>
+              <p class="field-hint ytd-guidance" id="ytd-guidance">The year-to-date taxable pay and year-to-date tax paid figures are the figures shown next to your year-to-date gross pay and NI letter in the bottom left-hand corner of your payslip.</p>
             </div>
             <div class="question-step hidden" data-question-step="ni-letter">
               <h2>What is your NI category letter?</h2>
@@ -1242,6 +1250,7 @@
               </div>
               <div class="student-loan-field hidden">
                 <label for="student-loan-plan">Student loan plan</label>
+                <p class="field-hint">Enter your student loan plan if you know it. Otherwise leave it as Plan 2, the most commonly used plan.</p>
                 <select id="student-loan-plan"></select>
                 <p class="field-hint student-loan-hint">Plan 1 is for older English or Welsh loans and Northern Ireland loans.<br>Plan 2 is for most English and Welsh undergraduate students who started between 2012 and 2023.<br>Plan 4 is for Scottish undergraduate loans.<br>Plan 5 is for English undergraduate students who started from 2023 onwards.</p>
               </div>
@@ -1354,7 +1363,6 @@
             <h2>Estimated payslip</h2>
             <p>Monthly estimate</p>
           </div>
-          <strong id="net-pay">£0.00</strong>
         </div>
         <div class="payslip-columns">
           <section>
@@ -1371,6 +1379,7 @@
           <span>Estimated net pay</span>
           <strong id="net-pay-bottom">£0.00</strong>
         </div>
+        <div class="afc-scenario-details hidden" id="afc-scenario-details"></div>
         <a class="breakdown-link" id="breakdown-link" href="breakdown.html" target="_blank">View calculation breakdown</a>
       </aside>
       <section class="print-disclaimer" aria-label="Disclaimer">
@@ -1841,6 +1850,9 @@
       document.getElementById("previous-tax-paid-hint").textContent = newStarter
         ? "Please enter the tax paid figure from your P45, if available."
         : `Please enter the year-to-date tax paid from the bottom left-hand side of the latest payslip before this one, normally the ${previousMonthName} payslip. Do not enter the monthly tax paid figure.`;
+      document.getElementById("ytd-guidance").textContent = newStarter
+        ? "If you are a very recent new starter enter the figures from your P45 above. If you've already been paid by us, add the year to date taxable pay and tax figures to the corresponding figures on your P45. In other words, enter your overall tax figures for both employments."
+        : "The year-to-date taxable pay and year-to-date tax paid figures are the figures shown next to your year-to-date gross pay and NI letter in the bottom left-hand corner of your payslip.";
     }
 
     function updatePayBasisFields() {
@@ -2041,6 +2053,7 @@
         : null;
       const calculatedStudentLoan = calculateLoan(niableThisMonth, selectedStudentLoanPlan);
       const calculatedPostgraduateLoan = calculateLoan(niableThisMonth, selectedPostgraduateLoanPlan);
+      const basicPayOverrideInUse = overrideAmounts && document.getElementById("basic-pay-override").value.trim() !== "";
       const taxOverride = document.getElementById("override-tax").value.trim();
       const niOverride = document.getElementById("override-ni").value.trim();
       const studentLoanOverride = document.getElementById("override-student-loan").value.trim();
@@ -2055,7 +2068,6 @@
         : numberValue(postgraduateLoanOverride);
       const netPay = grossPay - grossDeductions - finalPension - tax - ni - studentLoan - postgraduateLoan;
 
-      document.getElementById("net-pay").textContent = money(netPay);
       document.getElementById("net-pay-bottom").textContent = money(netPay);
       document.getElementById("allowance-output").innerHTML = [
         payRow("Basic Pay", monthlyBasePay),
@@ -2075,6 +2087,14 @@
       const afcLabel = selectedAfcRate
         ? `Band ${selectedAfcRate.band} ${selectedAfcRate.payStep} - ${money(selectedAfcRate.annualSalary)}`
         : "Not used";
+      const afcScenarioDetails = document.getElementById("afc-scenario-details");
+      if (selectedAfcRate && !basicPayOverrideInUse) {
+        afcScenarioDetails.textContent = `Scenario: Agenda for Change ${afcLabel}; contracted hours ${numberValue(document.getElementById("contracted-hours").value)} per week.`;
+        afcScenarioDetails.classList.remove("hidden");
+      } else {
+        afcScenarioDetails.textContent = "";
+        afcScenarioDetails.classList.add("hidden");
+      }
       const studentLoanPlanLabel = selectedStudentLoanPlan ? selectedStudentLoanPlan.planName : "None";
       const postgraduateLoanPlanLabel = selectedPostgraduateLoanPlan ? selectedPostgraduateLoanPlan.planName : "None";
       const breakdownRows = [
@@ -2201,6 +2221,13 @@
       renderLineList(type);
     });
 
+    function showPayslipView() {
+      document.getElementById("scenario-step").classList.add("hidden");
+      document.getElementById("payslip-step").classList.remove("hidden");
+      calculate();
+      window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
+    }
+
     document.addEventListener("click", event => {
       if (event.target.id === "scenario-back") {
         moveScenarioStep(-1);
@@ -2209,10 +2236,7 @@
         moveScenarioStep(1);
       }
       if (event.target.id === "continue-to-payslip") {
-        document.getElementById("scenario-step").classList.add("hidden");
-        document.getElementById("payslip-step").classList.remove("hidden");
-        calculate();
-        window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
+        showPayslipView();
       }
       if (event.target.id === "back-to-scenario") {
         document.getElementById("payslip-step").classList.add("hidden");
@@ -2271,7 +2295,12 @@
 
     window.addEventListener("message", event => {
       if (event.source !== breakdownWindow) return;
-      if (!event.data || event.data.type !== "paylip-breakdown-request") return;
+      if (!event.data) return;
+      if (event.data.type === "paylip-show-payslip") {
+        showPayslipView();
+        return;
+      }
+      if (event.data.type !== "paylip-breakdown-request") return;
       event.source.postMessage({ type: "paylip-breakdown-data", payload: latestBreakdownData }, "*");
     });
 
@@ -2291,6 +2320,7 @@
     renderScenarioStep();
     updateOverrideFields();
     calculate();
+    if (window.location.hash === "#payslip") showPayslipView();
   </script>
 </body>
 </html>
