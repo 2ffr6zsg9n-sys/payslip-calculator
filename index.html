@@ -196,7 +196,20 @@
       line-height: 1.35;
       margin: -2px 0 8px;
     }
-    .ytd-guidance { margin-top: 18px; }
+    .ytd-guidance { margin-top: 14px; }
+    .ytd-image-guide {
+      margin-top: 12px;
+      border: 1px solid #d8dde0;
+      background: #fff;
+      padding: 16px;
+    }
+    .ytd-image-guide p { margin: 0 0 14px; }
+    .ytd-image-guide img {
+      display: block;
+      width: 100%;
+      height: auto;
+      border: 1px solid #d8dde0;
+    }
     .section-heading { display: flex; justify-content: space-between; gap: 18px; align-items: center; margin-bottom: 14px; }
     .section-heading h2 { margin: 0; }
     .line-list { display: grid; gap: 14px; }
@@ -1229,7 +1242,11 @@
                   <input id="previous-tax-paid" inputmode="decimal">
                 </div>
               </div>
-              <p class="field-hint ytd-guidance" id="ytd-guidance">The year-to-date taxable pay and year-to-date tax paid figures are the figures shown next to your year-to-date gross pay and NI letter in the bottom left-hand corner of your payslip.</p>
+              <p class="field-hint ytd-guidance hidden" id="ytd-guidance"></p>
+              <div class="ytd-image-guide">
+                <p class="field-hint">This image shows where to find year-to-date taxable pay and tax on your payslip. Add the previous taxable pay and previous tax figures to the other figures shown. For example, 5072.22 + 123 = 5195.22 taxable pay and 630.40 + 21 = 651.40 tax.</p>
+                <img src="assets/payslip-ytd-tax-guide.png" alt="Example payslip section showing taxable pay, tax paid, previous taxable pay and previous tax paid fields">
+              </div>
             </div>
             <div class="question-step hidden" data-question-step="ni-letter">
               <h2>What is your NI category letter?</h2>
@@ -1846,13 +1863,15 @@
         : `Year-to-date tax paid up to ${previousMonthName}`;
       document.getElementById("previous-taxable-hint").textContent = newStarter
         ? "Please enter the taxable pay figure from your P45, if available."
-        : `Please enter the year-to-date taxable pay from the bottom left-hand side of the latest payslip before this one, normally the ${previousMonthName} payslip. Do not enter the monthly taxable pay figure.`;
+        : `Please enter the year-to-date taxable pay from the bottom left-hand side of the latest payslip before this one, normally the ${previousMonthName} payslip.`;
       document.getElementById("previous-tax-paid-hint").textContent = newStarter
         ? "Please enter the tax paid figure from your P45, if available."
-        : `Please enter the year-to-date tax paid from the bottom left-hand side of the latest payslip before this one, normally the ${previousMonthName} payslip. Do not enter the monthly tax paid figure.`;
-      document.getElementById("ytd-guidance").textContent = newStarter
+        : `Please enter the year-to-date tax paid from the bottom left-hand side of the latest payslip before this one, normally the ${previousMonthName} payslip.`;
+      const ytdGuidance = document.getElementById("ytd-guidance");
+      ytdGuidance.textContent = newStarter
         ? "If you are a very recent new starter enter the figures from your P45 above. If you've already been paid by us, add the year to date taxable pay and tax figures to the corresponding figures on your P45. In other words, enter your overall tax figures for both employments."
-        : "The year-to-date taxable pay and year-to-date tax paid figures are the figures shown next to your year-to-date gross pay and NI letter in the bottom left-hand corner of your payslip.";
+        : "";
+      ytdGuidance.classList.toggle("hidden", !newStarter);
     }
 
     function updatePayBasisFields() {
