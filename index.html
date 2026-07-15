@@ -102,6 +102,15 @@
       font-size: 30px;
       margin-bottom: 0;
     }
+    .field-error {
+      color: #d5281b;
+      font-size: 16px;
+      font-weight: 700;
+      margin: 6px 0 0;
+    }
+    .input-error {
+      border: 3px solid #d5281b;
+    }
     .question-step .field-row {
       grid-column: auto;
     }
@@ -1203,19 +1212,20 @@
               <p class="field-hint">Tax can be calculated on a year-to-date basis or just a single month at a time. If your payslip says the word 'CUMUL' after your tax code then you should choose the first option above and supply your taxable pay figures when asked to do so. If your payslip says 'NONCUM' after your tax code then please select the second option above and you won't need to provide your taxable pay figures. If you don't have your taxable pay figures to hand, select the second option but bear in mind this could lead to a less accurate estimate.</p>
             </div>
             <div class="question-step hidden" data-question-step="month">
-              <h2>Which payslip do you want to estimate?</h2>
+              <h2>The payslip calculator can only calculate your next payslip. When were you paid last?</h2>
               <div>
-                <label for="month">Payslip month</label>
+                <label for="month">Last paid month</label>
                 <select id="month"></select>
               </div>
-              <p class="field-hint">We use this to work out which previous payslip figures you should enter. If you choose April, the estimate will be calculated without using previous taxable pay figures.</p>
-              <p class="field-hint">You can only estimate your current or next payslip accurately. You cannot accurately estimate more than one month ahead. If you would like a rough example for a future payslip, select April from this list.</p>
+              <p class="field-hint">Select the month shown on your latest payslip. The calculator will estimate the next payslip after that month.</p>
+              <p class="field-hint">For example, if your latest payslip is May, select May and enter the year-to-date taxable pay and tax paid figures from that payslip. The calculator will then estimate June.</p>
             </div>
             <div class="question-step hidden" data-question-step="tax-code">
               <h2>What is your tax code?</h2>
               <div>
                 <label for="tax-code">Tax code</label>
                 <input id="tax-code" value="1257L">
+                <p class="field-error hidden" id="tax-code-error"></p>
               </div>
               <p class="field-hint">You can find this on your payslip. If you are not sure, leave the default and treat the result as a rough estimate.</p>
             </div>
@@ -1236,6 +1246,7 @@
                   <label for="previous-taxable" id="previous-taxable-label">Year-to-date taxable pay</label>
                   <p class="field-hint" id="previous-taxable-hint"></p>
                   <input id="previous-taxable" inputmode="decimal">
+                  <p class="field-error hidden" id="previous-taxable-error"></p>
                 </div>
                 <div>
                   <label for="previous-tax-paid" id="previous-tax-paid-label">Year-to-date tax paid</label>
@@ -1494,6 +1505,19 @@
     const breakdownStorageKey = "nhs-paylip-calculator-latest-breakdown";
     const maxLines = 10;
     const months = ["April", "May", "June", "July", "August", "September", "October", "November", "December", "January", "February", "March"];
+    function monthName(monthNumber) {
+      return months[Math.min(11, Math.max(0, Number(monthNumber || 1) - 1))] || "the selected month";
+    }
+
+    function selectedLastPaidMonthNumber() {
+      return Math.min(12, Math.max(1, Number(document.getElementById("month")?.value) || 1));
+    }
+
+    function nextPayslipMonthNumber() {
+      const lastPaidMonthNumber = selectedLastPaidMonthNumber();
+      return lastPaidMonthNumber === 12 ? 1 : lastPaidMonthNumber + 1;
+    }
+
     const pensionBands2026 = [
       { id: "t1", from: 0, to: 13259, rate: 5.2 },
       { id: "t2", from: 13260, to: 28854, rate: 6.5 },
@@ -1515,7 +1539,7 @@
       { id: "new-starter" },
       { id: "month", visible: () => document.getElementById("cumulative-tax").checked },
       { id: "tax-code" },
-      { id: "ytd", visible: () => document.getElementById("new-starter").value === "yes" || (document.getElementById("cumulative-tax").checked && Number(document.getElementById("month").value) > 1) },
+      { id: "ytd", visible: () => document.getElementById("new-starter").value === "yes" || (document.getElementById("cumulative-tax").checked && nextPayslipMonthNumber() > 1) },
       { id: "ni-letter" },
       { id: "student-loan" },
       { id: "postgraduate-loan" },
@@ -1642,12 +1666,23 @@
     }
 
     function taxCodeAllowance(taxCode) {
-      const code = String(taxCode || "").trim().toUpperCase().replace(/\s+/g, "");
+      let code = String(taxCode || "").trim().toUpperCase().replace(/\s+/g, "");
+      if ((code.startsWith("S") || code.startsWith("C")) && code.length > 1) code = code.slice(1);
       if (!code) return 12570;
       const digits = code.match(/\d+/);
       if (code.startsWith("K")) return digits ? -Number(digits[0]) * 10 : 0;
       if (["BR", "D0", "D1", "NT"].includes(code)) return 0;
       return digits ? Number(digits[0]) * 10 : 12570;
+    }
+
+    function isValidTaxCode(taxCode) {
+      let code = String(taxCode || "").trim().toUpperCase().replace(/\s+/g, "");
+      if (!code) return false;
+      if ((code.startsWith("S") || code.startsWith("C")) && code.length > 1) code = code.slice(1);
+      if (["BR", "D0", "D1", "NT"].includes(code)) return true;
+      if (/^K\d{1,5}[A-Z]?$/.test(code)) return true;
+      if (/^\d{1,5}[A-Z]{0,2}$/.test(code)) return true;
+      return false;
     }
 
     function isKTaxCode(taxCode) {
@@ -1728,7 +1763,45 @@
       document.getElementById("continue-to-payslip").classList.toggle("hidden", currentStep.id !== "ready");
     }
 
+    function setFieldError(inputId, errorId, message) {
+      const input = document.getElementById(inputId);
+      const error = document.getElementById(errorId);
+      if (!input || !error) return;
+      input.classList.toggle("input-error", Boolean(message));
+      error.textContent = message || "";
+      error.classList.toggle("hidden", !message);
+    }
+
+    function clearScenarioErrors() {
+      setFieldError("tax-code", "tax-code-error", "");
+      setFieldError("previous-taxable", "previous-taxable-error", "");
+    }
+
+    function validateScenarioStep() {
+      clearScenarioErrors();
+      const visibleSteps = visibleScenarioSteps();
+      const currentStep = visibleSteps[state.scenarioStepIndex] || visibleSteps[0];
+      if (currentStep?.id === "tax-code" && !isValidTaxCode(document.getElementById("tax-code").value)) {
+        setFieldError("tax-code", "tax-code-error", "Enter a valid tax code, for example 1257L, S1257L, BR, D0, D1, NT or K475.");
+        document.getElementById("tax-code").focus();
+        return false;
+      }
+      if (currentStep?.id === "ytd") {
+        const taxablePayValue = document.getElementById("previous-taxable").value.trim();
+        if (taxablePayValue !== "" && Number(taxablePayValue) < 0) {
+          const newStarter = document.getElementById("new-starter").value === "yes";
+          setFieldError("previous-taxable", "previous-taxable-error", newStarter
+            ? "Taxable pay from your P45 cannot be negative."
+            : "Year-to-date taxable pay cannot be negative.");
+          document.getElementById("previous-taxable").focus();
+          return false;
+        }
+      }
+      return true;
+    }
+
     function moveScenarioStep(direction) {
+      if (direction > 0 && !validateScenarioStep()) return;
       const visibleSteps = visibleScenarioSteps();
       state.scenarioStepIndex = Math.min(Math.max(state.scenarioStepIndex + direction, 0), visibleSteps.length - 1);
       renderScenarioStep();
@@ -1848,11 +1921,11 @@
 
     function updateCumulativeFields() {
       syncCumulativeTaxChoice();
-      const monthNumber = Math.min(12, Math.max(1, Number(document.getElementById("month").value) || 1));
+      const monthNumber = nextPayslipMonthNumber();
       const newStarter = document.getElementById("new-starter").value === "yes";
       const isCumulative = document.getElementById("cumulative-tax").checked;
       const showPreviousPay = newStarter || (isCumulative && monthNumber > 1);
-      const previousMonthName = months[Math.max(0, monthNumber - 2)] || "the previous month";
+      const previousMonthName = monthName(selectedLastPaidMonthNumber());
       document.querySelectorAll(".ytd-field").forEach(field => {
         field.classList.toggle("hidden", !showPreviousPay);
       });
@@ -2007,7 +2080,10 @@
       const data = referenceData();
       updatePensionFields(false);
       const monthlyBasePay = monthlyBasePayForCalculation();
-      const monthNumber = Math.min(12, Math.max(1, Number(document.getElementById("month").value) || 1));
+      const lastPaidMonthNumber = selectedLastPaidMonthNumber();
+      const monthNumber = nextPayslipMonthNumber();
+      const lastPaidMonthName = monthName(lastPaidMonthNumber);
+      const estimatedPayslipMonthName = monthName(monthNumber);
       const newStarter = document.getElementById("new-starter").value === "yes";
       const previousTaxableInput = document.getElementById("previous-taxable").value.trim();
       const previousTaxPaidInput = document.getElementById("previous-tax-paid").value.trim();
@@ -2118,6 +2194,8 @@
       const studentLoanPlanLabel = selectedStudentLoanPlan ? selectedStudentLoanPlan.planName : "None";
       const postgraduateLoanPlanLabel = selectedPostgraduateLoanPlan ? selectedPostgraduateLoanPlan.planName : "None";
       const breakdownRows = [
+        ["Last paid month selected", lastPaidMonthName],
+        ["Estimated payslip month", estimatedPayslipMonthName],
         ["Tax code", String(taxCode || "")],
         ["Tax basis", taxBasisLabel],
         ["Previous taxable pay entered", previousTaxable],
@@ -2169,6 +2247,8 @@
       }
       const lineContainer = event.target.closest ? event.target.closest(".pay-line") : null;
       if (!lineContainer) {
+        if (event.target.id === "tax-code") setFieldError("tax-code", "tax-code-error", "");
+        if (event.target.id === "previous-taxable") setFieldError("previous-taxable", "previous-taxable-error", "");
         if (["tax-calculation-basis", "cumulative-tax", "month", "new-starter"].includes(event.target.id)) updateCumulativeFields();
         if (event.target.id === "override-statutory-deductions") updateOverrideFields();
         if (["has-student-loan", "has-postgraduate-loan"].includes(event.target.id)) updateLoanFields();
